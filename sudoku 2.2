@@ -1,0 +1,123 @@
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define SIZE 9
+
+// Cetak papan Sudoku
+void printBoard(int board[SIZE][SIZE]) {
+    for (int i = 0; i < SIZE; i++) {
+        if (i % 3 == 0 && i != 0) printf("---------------------\n");
+        for (int j = 0; j < SIZE; j++) {
+            if (j % 3 == 0 && j != 0) printf("| ");
+            printf("%c ", board[i][j] ? '0' + board[i][j] : ' '); // Kotak kosong jadi spasi
+        }
+        printf("\n");
+    }
+}
+
+// Periksa apakah angka valid
+bool isValidMove(int board[SIZE][SIZE], int row, int col, int num) {
+    int startRow = row - row % 3, startCol = col - col % 3;
+    for (int i = 0; i < SIZE; i++)
+        if (board[row][i] == num || board[i][col] == num || 
+            board[startRow + i / 3][startCol + i % 3] == num)
+            return false;
+    return true;
+}
+
+// Backtracking untuk menyelesaikan Sudoku
+bool solveSudoku(int board[SIZE][SIZE]) {
+    for (int row = 0; row < SIZE; row++)
+        for (int col = 0; col < SIZE; col++)
+            if (board[row][col] == 0) {
+                for (int num = 1; num <= 9; num++)
+                    if (isValidMove(board, row, col, num)) {
+                        board[row][col] = num;
+                        if (solveSudoku(board)) return true;
+                        board[row][col] = 0; // Backtrack
+                    }
+                return false;
+            }
+    return true; // Puzzle selesai
+}
+
+// Inisialisasi papan dengan angka acak
+void initializeBoard(int board[SIZE][SIZE]) {
+    srand(time(NULL));
+    for (int i = 0; i < SIZE; i++)
+        for (int j = 0; j < SIZE; j++)
+            board[i][j] = 0; // Semua kotak kosong
+
+    for (int i = 0; i < 20; i++) { // Isi 20 angka awal
+        int row = rand() % SIZE, col = rand() % SIZE, num = rand() % 9 + 1;
+        if (board[row][col] == 0 && isValidMove(board, row, col, num))
+            board[row][col] = num;
+    }
+
+    // Pastikan puzzle bisa diselesaikan
+    int tempBoard[SIZE][SIZE];
+    memcpy(tempBoard, board, sizeof(tempBoard));
+    if (!solveSudoku(tempBoard)) {
+        initializeBoard(board); // Jika tidak bisa diselesaikan, buat ulang
+    }
+}
+
+// Main loop permainan
+void playSudoku(int board[SIZE][SIZE]) {
+    char input[20];
+    int row, col, num;
+
+    while (true) {
+        printf("\nSudoku Puzzle:\n");
+        printBoard(board);
+
+        // Cek apakah papan sudah penuh
+        bool boardFull = true;
+        for (int i = 0; i < SIZE && boardFull; i++)
+            for (int j = 0; j < SIZE; j++)
+                if (board[i][j] == 0) boardFull = false;
+
+        if (boardFull) {
+            printf("\nSelamat! Kamu menang!\n");
+            return;
+        }
+        
+        printf("\nMasukkan koordinat angka (baris kolom angka)\nAtau Ketik \"menyerah\" jika kamu sudah puyeng: ");
+        scanf(" %[^\n]", input);
+        if (strcmp(input, "menyerah") == 0) {
+            solveSudoku(board);
+            printf("\nKok menyerah sihh...\n");
+            printBoard(board);
+            return;
+        }
+
+        if (sscanf(input, "%d %d %d", &row, &col, &num) == 3) {
+            row--, col--; // Konversi ke indeks 0
+            if (row < 0 || col < 0 || row >= SIZE || col >= SIZE || num < 1 || num > 9) {
+                printf("Input tidak valid. Baris dan kolom harus 1-9.\n");
+            } else if (board[row][col] != 0) {
+                printf("Kotak sudah terisi. Pilih kotak kosong.\n");
+            } else if (isValidMove(board, row, col, num)) {
+                board[row][col] = num;
+            } else {
+                printf("Anda kalah wkwk.\n");
+                return;
+            }
+        } else {
+            printf("Input tidak valid.\n");
+        }
+    }
+}
+
+int main() {
+    int board[SIZE][SIZE];
+    initializeBoard(board);
+
+    printf("Selamat bermain Sudoku!\n");
+    playSudoku(board);
+
+    return 0;
+}
